@@ -81,6 +81,15 @@ Overpass クエリ（POST `data=`、https://overpass-api.de/api/interpreter）:
 
 検算: 14時台でゾーン合計＋「その他・不明」= 圏域内合計（33,786,972人）を確認。
 
+### P1 勤務者除外でにぎわいの地図はどれだけ変わるか（data/p1_h30.gpkg・output/p1/、issue #10）
+
+作成: `python -I scripts/analyze_p1_h30.py`（QGIS 不要、約20秒）。先に `build_purpose_h30.py` を実行しておく。
+
+- 比べる地図（集中量、帰宅を除く）: A 全目的 / B 通勤・業務を除く / C 私事のみ。計画基本ゾーンは密度、500m メッシュはトリップ数。
+- 指標: Spearman 順位相関、上位30・60の重なり、LISA（局所モラン I、クイーン隣接、999回並べ替え、p<0.05）の HH の入れ替わり、A→C の順位変化と属性の順位相関。
+- レイヤ: `kzone_p1`（`A`〜`C`・`T` の密度、`*_pct`、`lisa_*`、順位差 `d_CA`、市区町村 `city`、駅乗降客数 `riders2018` など）、`mesh500_p1`。
+- 表: `p1_compare.csv`（比較の要約）、`p1_mesh_top30.csv`、`p1_rankchange_attrs.csv`、`p1_kzone_{fall,rise,hh_lost,hh_new}.csv`。図: `p1_*.png`。
+
 ## スクリプト（scripts/）
 
 | ファイル | 役割 |
@@ -89,6 +98,7 @@ Overpass クエリ（POST `data=`、https://overpass-api.de/api/interpreter）:
 | `join_b4_kzone.py` | b-4 を計画基本ゾーンに結合（GPKG を作り直す） |
 | `build_stations_major.py` | 主要駅レイヤ作成 |
 | `build_purpose_h30.py` | 目的別集中量を計画基本ゾーンと 500m メッシュに結合（geopandas、QGIS 不要） |
+| `analyze_p1_h30.py` | P1: 全目的・通勤業務除く・私事のみの地図を順位相関と LISA で比較（geopandas、QGIS 不要） |
 | `anim_kzone_b4_ptinfo.py` | **主系**: 公式準拠配色・14段階、背景の上下分割、主要駅ラベル、オフスクリーン描画、固定パレット GIF |
 | `glow_samples.py` | 夜景風（inferno＋グロー）＋鉄道線＋主要駅、見本と `export_night()` |
 | `legacy/anim_kzone_b4.py`, `legacy/anim_kzone_b4_smooth.py`, `legacy/anim_kzone_b4_smooth_23ku.py`, `legacy/style_kzone_b4.py` | 途中の版（キャンバス書き出し・補間・対数配色）。参考として保存 |
