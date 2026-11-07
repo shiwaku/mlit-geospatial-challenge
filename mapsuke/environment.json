@@ -1,0 +1,11 @@
+{
+ "QGIS": "4.0.0-Norrköping",
+ "Python": "3.12.13",
+ "OS": "Windows-11-10.0.26200-SP0",
+ "GDAL": "3.12.2",
+ "Pillow": "12.1.1",
+ "numpy": "2.4.2",
+ "matplotlib": "3.10.8",
+ "geopandas": "1.1.2",
+ "pandas": "3.0.1"
+}

@@ -1,0 +1,27 @@
+# --- データ（再配布条件の確認が必要・サイズが大きい）---
+# 入力データ（PT 基礎集計・ゾーン shp・e-Stat・S12・OSM）と、それから作った加工データ
+mapsuke/data/
+
+# --- 生成物（scripts/run_all.py で再生成できる）---
+mapsuke/output/
+
+# --- QGIS ---
+*.qgs~
+*.qgz~
+*.qgd
+*.gpkg-wal
+*.gpkg-shm
+*.aux.xml
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+
+# --- OS / エディタ ---
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
