@@ -63,6 +63,22 @@ Overpass クエリ（POST `data=`、https://overpass-api.de/api/interpreter）:
 | `pref` / `study_area` | 都県境界・調査対象範囲（小ゾーンを修復→融合→5km²未満の孔を除去） | `anim_kzone_b4_ptinfo.py` の `ensure_boundaries()` |
 | `stations_major` | 主要駅150駅（S12 2018年乗降客数を駅グループ単位に合計、英語名は OSM name:en） | `build_stations_major.py` |
 
+### 目的別集中量（data/pt_h30_purpose.gpkg、issue #5）
+
+| レイヤ | 内容 |
+|---|---|
+| `kzone_purpose` | 計画基本ゾーン615件 × 目的別集中量（終日、c-2）。私事系 `shiji_all` = 自宅－私事＋私事、業務系 `work_all`、比率 `shiji_share`・`work_share`（帰宅を除く到着に占める割合）、私事系の到着時刻別 `shiji_a03_pre`〜`shiji_a27_post`、密度 `*_dens`、相対誤差の目安 `rse_*` |
+| `mesh500_purpose` | 2分の1地域メッシュ（約500m）15,026件 × 目的別集中量（mesh-1）＋居住地による来訪者指標（mesh-3）：自ゾーン外に住む人の集中量 `att_outside`・比率 `outside_share`、居住地の多様性 `res_entropy`、居住地からの平均距離 `res_mean_km` |
+
+作成: `python -I scripts/build_purpose_h30.py`（QGIS 不要）。c-2 の縦持ち表を `data/pt_h30_c2_tidy.csv` に出す。
+
+- 集中量は「着いたトリップ数」で、滞留（その時刻にいる人数）ではない。目的別の滞留人口と滞在時間は公開集計表に無い（表7-1 は駐車の時間分布）。
+- 平日のみ。相対誤差の目安 `rse = 21.5 / sqrt(トリップ数)`（手引きの「21,000トリップで約15%、5,000で約30%」から逆算）。
+  私事系で 30% 以内に収まるのは、計画基本ゾーンで 557/614、500m メッシュで 462/11,776。**私事系の分析は計画基本ゾーン単位を基本にし、メッシュは上位メッシュか比率・順位で読む。**
+- mesh-1 は mesh-3 より 1,720 メッシュ少ない（合計 689 トリップ未満が載っていないとみられる）。そのメッシュの目的別の値は欠損。
+- `outside_share` は全目的（帰宅を含む）で、勤務者は除けていない。
+- 検算: ゾーン合計 71,534,753 ＋ その他・不明 ≒ c-2 の圏域内合計 72,597,676。
+
 検算: 14時台でゾーン合計＋「その他・不明」= 圏域内合計（33,786,972人）を確認。
 
 ## スクリプト（scripts/）
@@ -72,6 +88,7 @@ Overpass クエリ（POST `data=`、https://overpass-api.de/api/interpreter）:
 | `run_all.py` | **一括実行**（データ作成→GIF 6本） |
 | `join_b4_kzone.py` | b-4 を計画基本ゾーンに結合（GPKG を作り直す） |
 | `build_stations_major.py` | 主要駅レイヤ作成 |
+| `build_purpose_h30.py` | 目的別集中量を計画基本ゾーンと 500m メッシュに結合（geopandas、QGIS 不要） |
 | `anim_kzone_b4_ptinfo.py` | **主系**: 公式準拠配色・14段階、背景の上下分割、主要駅ラベル、オフスクリーン描画、固定パレット GIF |
 | `glow_samples.py` | 夜景風（inferno＋グロー）＋鉄道線＋主要駅、見本と `export_night()` |
 | `legacy/anim_kzone_b4.py`, `legacy/anim_kzone_b4_smooth.py`, `legacy/anim_kzone_b4_smooth_23ku.py`, `legacy/style_kzone_b4.py` | 途中の版（キャンバス書き出し・補間・対数配色）。参考として保存 |
