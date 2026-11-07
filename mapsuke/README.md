@@ -106,6 +106,16 @@ Overpass クエリ（POST `data=`、https://overpass-api.de/api/interpreter）:
 - 鈴木（2014）の到着数原単位 `unit_visit` = 私事系集中量 ÷（小売・飲食・生活関連の従業者数、100人以上）。
 - 表: `p3_models.csv`、`p3_coefs.csv`、`p3_resid_candidates.csv`、`p3_resid_{pos,neg}.csv`、`p3_unit_{top,low}.csv`。図: `p3_resid_map.png`、`p3_pred_obs.png`。
 
+### P4 私事来訪の量 × 消費額で類型化（data/p4_h30.gpkg・output/p4/、issue #12）
+
+作成: `python -I scripts/analyze_p4_h30.py`（QGIS 不要）。先に `analyze_p1_h30.py` を実行しておく。
+
+- 入力: 表4-4（目的別消費額別発生集中量）と表4-2（目的別発生集中量の発着施設構成）。私事系 = 自宅－私事＋その他私事。私事系の合計は 4-4・4-2・c-2 で一致する。
+- 高消費率 `high_spend` = 1,001円以上の割合（不明4%を除く）。平均消費額 `mean_spend` は区分の代表値（0/500/3,000/7,500/15,000円）による概算。
+- 4象限 `quad` = 私事系の密度 × 高消費率をそれぞれ中央値で分ける（中央値は私事系 5,136 トリップ以上の 557 ゾーンで決める）。
+- **ゾーン単位の高消費率は標本誤差が大きい**（標準誤差の中央値 0.063 に対し、ゾーン間の四分位範囲は 0.085）。消費側の分類が 95% で確かなのは 557 ゾーン中 37 だけ（`spend_side_sure`）。個々のゾーンの象限ではなく、施設構成との相関など全体の傾向で読む。
+- 表: `p4_check.csv`、`p4_volume_vs_spend.csv`、`p4_facility_corr.csv`、`p4_quadrants.csv`、`p4_{hh,hl,lh}_top.csv`、`p4_spend_top.csv`。図: `p4_quadrants.png`。
+
 ## スクリプト（scripts/）
 
 | ファイル | 役割 |
@@ -116,6 +126,7 @@ Overpass クエリ（POST `data=`、https://overpass-api.de/api/interpreter）:
 | `build_purpose_h30.py` | 目的別集中量を計画基本ゾーンと 500m メッシュに結合（geopandas、QGIS 不要） |
 | `analyze_p1_h30.py` | P1: 全目的・通勤業務除く・私事のみの地図を順位相関と LISA で比較（geopandas、QGIS 不要） |
 | `analyze_p3_h30.py` | P3: 私事系集中量を駅・人口・従業者数でポアソン回帰し残差を地図化（geopandas、QGIS 不要） |
+| `analyze_p4_h30.py` | P4: 私事来訪の量と消費額で計画基本ゾーンを4象限に分け、着施設構成で特徴づける（geopandas、QGIS 不要） |
 | `anim_kzone_b4_ptinfo.py` | **主系**: 公式準拠配色・14段階、背景の上下分割、主要駅ラベル、オフスクリーン描画、固定パレット GIF |
 | `glow_samples.py` | 夜景風（inferno＋グロー）＋鉄道線＋主要駅、見本と `export_night()` |
 | `legacy/anim_kzone_b4.py`, `legacy/anim_kzone_b4_smooth.py`, `legacy/anim_kzone_b4_smooth_23ku.py`, `legacy/style_kzone_b4.py` | 途中の版（キャンバス書き出し・補間・対数配色）。参考として保存 |
