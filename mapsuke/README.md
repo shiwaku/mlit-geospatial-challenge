@@ -90,6 +90,22 @@ Overpass クエリ（POST `data=`、https://overpass-api.de/api/interpreter）:
 - レイヤ: `kzone_p1`（`A`〜`C`・`T` の密度、`*_pct`、`lisa_*`、順位差 `d_CA`、市区町村 `city`、駅乗降客数 `riders2018` など）、`mesh500_p1`。
 - 表: `p1_compare.csv`（比較の要約）、`p1_mesh_top30.csv`、`p1_rankchange_attrs.csv`、`p1_kzone_{fall,rise,hh_lost,hh_new}.csv`。図: `p1_*.png`。
 
+### P3 来訪者の量を駅・人口で説明し残差を地図化（data/p3_h30.gpkg・output/p3/、issue #11）
+
+作成: `python -I scripts/analyze_p3_h30.py`（QGIS 不要）。先に `build_purpose_h30.py` と `analyze_p1_h30.py` を実行しておく。
+
+追加の入力（e-Stat 地図で見る統計 統計データダウンロード、2分の1地域メッシュ、1次メッシュ 5238〜5240・5338〜5340・5438〜5440 の9区画）
+- `data/raw/estat_pop500_2020/tblT001141H*.txt`: 2020年国勢調査 人口及び世帯（統計表ID T001141）
+  `https://www.e-stat.go.jp/gis/statmap-search/data?statsId=T001141&code=<1次メッシュ>&downloadType=2`
+- `data/raw/estat_econ500_2016/tblT000918H*.txt`: 2016年経済センサス活動調査 産業大分類別 事業所数・従業者数（T000918）。
+  列 001〜018 が事業所数、019〜036 が従業者数（同じ産業順）。URL は上の statsId を差し替える。
+
+- 私事系集中量を、ポアソン回帰（対数リンク）で「駅＋人口」とそれに従業者数を足したモデルで当て、逸脱度の説明率 D² と空間ブロック CV（2次メッシュ単位5分割）で比べる。
+- 駅は乗降客数を距離でガウス減衰（σ=400m）させた合計 `riders_in` と 1km 以内の合計 `riders_1km`。周辺人口 `pop_nbr` は 5×5 メッシュの合計。
+- 残差 `resid` = log((実測+1)/(予測+1))。読むのは実測か予測が 5,136 トリップ以上（`reliable`）のメッシュ。
+- 鈴木（2014）の到着数原単位 `unit_visit` = 私事系集中量 ÷（小売・飲食・生活関連の従業者数、100人以上）。
+- 表: `p3_models.csv`、`p3_coefs.csv`、`p3_resid_candidates.csv`、`p3_resid_{pos,neg}.csv`、`p3_unit_{top,low}.csv`。図: `p3_resid_map.png`、`p3_pred_obs.png`。
+
 ## スクリプト（scripts/）
 
 | ファイル | 役割 |
@@ -99,6 +115,7 @@ Overpass クエリ（POST `data=`、https://overpass-api.de/api/interpreter）:
 | `build_stations_major.py` | 主要駅レイヤ作成 |
 | `build_purpose_h30.py` | 目的別集中量を計画基本ゾーンと 500m メッシュに結合（geopandas、QGIS 不要） |
 | `analyze_p1_h30.py` | P1: 全目的・通勤業務除く・私事のみの地図を順位相関と LISA で比較（geopandas、QGIS 不要） |
+| `analyze_p3_h30.py` | P3: 私事系集中量を駅・人口・従業者数でポアソン回帰し残差を地図化（geopandas、QGIS 不要） |
 | `anim_kzone_b4_ptinfo.py` | **主系**: 公式準拠配色・14段階、背景の上下分割、主要駅ラベル、オフスクリーン描画、固定パレット GIF |
 | `glow_samples.py` | 夜景風（inferno＋グロー）＋鉄道線＋主要駅、見本と `export_night()` |
 | `legacy/anim_kzone_b4.py`, `legacy/anim_kzone_b4_smooth.py`, `legacy/anim_kzone_b4_smooth_23ku.py`, `legacy/style_kzone_b4.py` | 途中の版（キャンバス書き出し・補間・対数配色）。参考として保存 |
