@@ -41,7 +41,8 @@ mapsuke/
 | 記者発表資料 | `tokyo_pt_h30_1127press.pdf` | https://www.tokyo-pt.jp/static/hp/file/press/1127press.pdf | 参考 |
 | 駅別乗降客数 | `stations/S12-23_GML.zip`, `stations/S12-23/` | 国土数値情報 S12 https://nlftp.mlit.go.jp/ksj/gml/data/S12/S12-23/S12-23_GML.zip （2026-11-03 取得） | 2018年値 = S12_037 |
 | 駅の英語名 | `stations/osm_stations_tokyo.json` | OpenStreetMap（Overpass API, 2026-11-03 取得）© OpenStreetMap contributors, ODbL | クエリは下記 |
-| その他（H10/H20/S63 等） | `H10_data/` ほか | 協議会 | 今回の処理では未使用 |
+| 過去回の基礎集計（S63/H10/H20） | `S63_data/`・`H10_data/`・`H20_data/`（*.lzh） | 協議会 | b-4・c-2 を 7-Zip で `extracted/<年次>/b-4/`・`c-2/` に展開して使う（.xls、読むには xlrd） |
+| ゾーンコードの経年対応表 | `zonecode_keinen/zonecode.xlsx` | https://www.tokyo-pt.jp/static/hp/file/data/zonecode.xlsx （2026-11-23 取得） | H30 の計画基本ゾーン・小ゾーンを基準に H20・H10・S63 を対応させた表 |
 
 Overpass クエリ（POST `data=`、https://overpass-api.de/api/interpreter）:
 ```
@@ -116,6 +117,19 @@ Overpass クエリ（POST `data=`、https://overpass-api.de/api/interpreter）:
 - **ゾーン単位の高消費率は標本誤差が大きい**（標準誤差の中央値 0.063 に対し、ゾーン間の四分位範囲は 0.085）。消費側の分類が 95% で確かなのは 557 ゾーン中 37 だけ（`spend_side_sure`）。個々のゾーンの象限ではなく、施設構成との相関など全体の傾向で読む。
 - 表: `p4_check.csv`、`p4_volume_vs_spend.csv`、`p4_facility_corr.csv`、`p4_quadrants.csv`、`p4_{hh,hl,lh}_top.csv`、`p4_spend_top.csv`。図: `p4_quadrants.png`。
 
+### 時刻別滞留人口の経年比較（data/b4_trend.gpkg・output/b4_trend/）
+
+作成: `python -I scripts/analyze_b4_trend.py`（QGIS 不要）。
+
+- S63・H10・H20・H30 の b-4 を、経年対応表で H30 の計画基本ゾーンに対応させ、H30 の市区町村（政令市は区）に集計する。
+  コードが同じでも回によって場所が違うゾーンがある（茨城南部・埼玉・千葉）ので、コードの一致では対応づけない。
+  複数の H30 ゾーンに分かれる過去ゾーンは H30 の3時台の滞留人口の比で配り分ける（14時滞留のうち S63 で 5.4%、H10 で 3.8%、H20 で 1.0% が該当）。
+- どの計画基本ゾーンでも面積が最大にならない小さな町村は、同じゾーンの市区町村にまとめる（`absorbed`、表示名は「〜ほか」）。245 単位。
+- 指標: `share_*` = 14時台の滞留人口の都市圏シェア、`share_ratio_A_B` = シェアの比（都市圏全体の伸びを除いた相対的な伸び）、`dn_*` = 昼夜比（14時台 ÷ 3時台）、`dn_ratio_A_B`。
+- **H20 は時刻不明が約3割**あり各時刻の値が小さく出る。H20 の時刻不明率と H10→H20 のシェア比には負の順位相関（−0.22）があり、偏りが残る。経年は S63→H30 と H10→H30 で読む。
+- 全目的・全員（居住者・勤務者を含む）の滞留。伸びの中身（住宅・オフィス・商業）は分けられない。
+- 表: `b4_trend_city.csv`（市区町村×指標）、`b4_trend_city_panel.csv`（市区町村×年次×時刻）、`b4_trend_zone_mapping.csv`（ゾーンの対応と重み）。図: `b4_trend_share_S63_H30.png`、`b4_trend_share_H10_H30.png`、`b4_trend_daynight_S63_H30.png`。
+
 ## スクリプト（scripts/）
 
 | ファイル | 役割 |
@@ -126,6 +140,7 @@ Overpass クエリ（POST `data=`、https://overpass-api.de/api/interpreter）:
 | `build_purpose_h30.py` | 目的別集中量を計画基本ゾーンと 500m メッシュに結合（geopandas、QGIS 不要） |
 | `analyze_p1_h30.py` | P1: 全目的・通勤業務除く・私事のみの地図を順位相関と LISA で比較（geopandas、QGIS 不要） |
 | `analyze_p3_h30.py` | P3: 私事系集中量を駅・人口・従業者数でポアソン回帰し残差を地図化（geopandas、QGIS 不要） |
+| `analyze_b4_trend.py` | 時刻別滞留人口（b-4）の経年比較：S63〜H30 を経年対応表で H30 の市区町村にそろえ、昼の滞留のシェアと昼夜比の変化を地図化（geopandas、QGIS 不要） |
 | `analyze_p4_h30.py` | P4: 私事来訪の量と消費額で計画基本ゾーンを4象限に分け、着施設構成で特徴づける（geopandas、QGIS 不要） |
 | `anim_kzone_b4_ptinfo.py` | **主系**: 公式準拠配色・14段階、背景の上下分割、主要駅ラベル、オフスクリーン描画、固定パレット GIF |
 | `glow_samples.py` | 夜景風（inferno＋グロー）＋鉄道線＋主要駅、見本と `export_night()` |
